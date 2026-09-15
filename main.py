@@ -44,14 +44,17 @@ os.makedirs("logs", exist_ok=True)
 # ==========================================
 
 if not os.path.exists(LOG_FILE):
-    with open(LOG_FILE, "w", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow([
-            "Date",
-            "Time",
-            "Faces Detected",
-            "Status"
-        ])
+    try:
+        with open(LOG_FILE, "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow([
+                "Date",
+                "Time",
+                "Faces Detected",
+                "Status"
+            ])
+    except Exception as e:
+        print(f"Warning: Could not create initial attendance file: {e}")
 
 
 # ==========================================
@@ -70,36 +73,18 @@ detector = cv2.FaceDetectorYN.create(
 
 # ==========================================
 # OPEN CAMERA WITH DIRECTSHOW
-# =================
-# =========================
+# ==========================================
+
 camera = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
 if not camera.isOpened():
-    print("ERROR: Could not open camera.")
-    exit()
-
-if not camera.isOpened():
-    print("ERROR: Camera could not be opened using DirectShow (Index 0).")
+    print("ERROR: Could not open camera using DirectShow (Index 0).")
     print("Please verify your webcam is connected and not in use by another application.")
     exit()
 
 # Configure camera resolution
 camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-
-# Warm-up reads to let DirectShow negotiate and stabilize the stream
-for _ in range(10):
-    ret, warmup_frame = camera.read()
-    if ret and warmup_frame is not None:
-        break
-    time.sleep(0.05)
-
-# Initialize display window
-cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
-cv2.resizeWindow(WINDOW_NAME, 640, 480)
-
 
 print("=" * 60)
 print("SMART CLASS MONITORING")
@@ -129,17 +114,12 @@ try:
         # If frame cannot be read, retry reliably
         if not success or frame is None:
             consecutive_fails += 1
-            if consecutive_fails == 1 or consecutive_fails % 5 == 0:
+            if consecutive_fails == 1 or consecutive_fails % 10 == 0:
                 print(f"WARNING: Could not read frame ({consecutive_fails}/{max_consecutive_fails}). Retrying...")
-            time.sleep(0.05)
+            time.sleep(0.02)
 
-            # Allow user to quit even during a retry phase
             key = cv2.waitKey(1) & 0xFF
             if key in [ord("q"), ord("Q"), 27]:
-                break
-
-            # Check if window was closed
-            if cv2.getWindowProperty(WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:
                 break
 
             if consecutive_fails >= max_consecutive_fails:
@@ -223,16 +203,19 @@ try:
         current_second = now.strftime("%Y-%m-%d %H:%M:%S")
 
         if current_second != last_log_time:
-            with open(LOG_FILE, "a", newline="") as file:
-                writer = csv.writer(file)
-                writer.writerow([
-                    now.strftime("%Y-%m-%d"),
-                    now.strftime("%H:%M:%S"),
-                    face_count,
-                    status
-                ])
-
-            last_log_time = current_second
+            try:
+                with open(LOG_FILE, "a", newline="") as file:
+                    writer = csv.writer(file)
+                    writer.writerow([
+                        now.strftime("%Y-%m-%d"),
+                        now.strftime("%H:%M:%S"),
+                        face_count,
+                        status
+                    ])
+                last_log_time = current_second
+            except Exception as e:
+                # Catch permission/lock errors so preview stream is uninterrupted
+                pass
 
         # ======================================
         # SHOW CAMERA
@@ -247,15 +230,17 @@ try:
         # QUIT CONDITIONS
         # ======================================
 
-        # Check if window was closed via [X] button
-        if cv2.getWindowProperty(WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:
-            print("Preview window closed by user.")
-            break
-
-        # Check for keyboard quit (q, Q, or ESC)
         key = cv2.waitKey(1) & 0xFF
         if key in [ord("q"), ord("Q"), 27]:
             print("Exit requested by keypress.")
+            break
+
+        # Check if window was closed via [X] button
+        try:
+            if cv2.getWindowProperty(WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:
+                print("Preview window closed by user.")
+                break
+        except Exception:
             break
 
 except KeyboardInterrupt:
