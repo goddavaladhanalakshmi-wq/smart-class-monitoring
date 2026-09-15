@@ -6,8 +6,6 @@ The **Smart Class Monitoring System** is a computer-vision-based online classroo
 
 The system uses **React UI as the frontend** and **Python with Flask as the backend**. Computer vision technologies are used for face detection, face recognition, student presence monitoring, and attendance tracking.
 
-The system allows authorized administrators to monitor students, record attendance, track join and exit times, and view classroom analytics through a centralized interface.
-
 ---
 
 ## 🎯 Objectives
@@ -15,7 +13,7 @@ The system allows authorized administrators to monitor students, record attendan
 - Automate classroom attendance.
 - Reduce manual attendance work.
 - Detect students using a webcam.
-- Recognize registered students using face recognition.
+- Recognize students using face recognition.
 - Monitor student presence during online classes.
 - Record student join and exit times.
 - Maintain attendance timestamps.
@@ -43,13 +41,11 @@ The system allows authorized administrators to monitor students, record attendan
 
 - Uses a webcam for classroom monitoring.
 - Detects faces in real time.
-- Uses **YuNet Face Detection** with OpenCV.
 - Supports detection of multiple students.
 
 ### 🧑‍💻 Face Recognition
 
 - Recognizes registered students.
-- Uses **SFace Face Recognition**.
 - Matches detected faces with registered student profiles.
 
 ### 📝 Attendance Management
@@ -74,186 +70,9 @@ The system allows authorized administrators to monitor students, record attendan
 
 ---
 
-# 🏗️ System Architecture
+## ⚙️ Installation
 
-```text
-                    ┌──────────────────────┐
-                    │      Admin Login     │
-                    └──────────┬───────────┘
-                               │
-                               ▼
-                    ┌──────────────────────┐
-                    │       React UI       │
-                    │      Frontend        │
-                    └──────────┬───────────┘
-                               │
-                               ▼
-                    ┌──────────────────────┐
-                    │   Python + Flask     │
-                    │       Backend        │
-                    └──────────┬───────────┘
-                               │
-                               ▼
-                    ┌──────────────────────┐
-                    │   Classroom Camera   │
-                    └──────────┬───────────┘
-                               │
-                               ▼
-                    ┌──────────────────────┐
-                    │   Face Detection     │
-                    │       YuNet          │
-                    └──────────┬───────────┘
-                               │
-                               ▼
-                    ┌──────────────────────┐
-                    │   Face Recognition   │
-                    │       SFace          │
-                    └──────────┬───────────┘
-                               │
-                               ▼
-                    ┌──────────────────────┐
-                    │ Student Identification│
-                    └──────────┬───────────┘
-                               │
-                               ▼
-              ┌─────────────────────────────────┐
-              │ Attendance & Presence Tracking  │
-              └───────────────┬─────────────────┘
-                              │
-                              ▼
-                    ┌──────────────────────┐
-                    │       MySQL          │
-                    │      Database        │
-                    └──────────┬───────────┘
-                               │
-                               ▼
-                    ┌──────────────────────┐
-                    │      React UI        │
-                    │ Monitoring & Analytics│
-                    └──────────────────────┘
-Admin Login
-     ↓
-React UI
-     ↓
-Start Classroom Monitoring
-     ↓
-Webcam Captures Video
-     ↓
-Face Detection using YuNet
-     ↓
-Face Recognition using SFace
-     ↓
-Identify Registered Student
-     ↓
-Confirm Student Presence
-     ↓
-Record Attendance
-     ↓
-Record Join / Exit Time
-     ↓
-Store Information
-     ↓
-Display Results in React UI
-     ↓
-View Analytics
-# 🛠️ Technologies Used
+### 1. Clone the repository
 
-## Frontend
-- React UI
-
-## Backend
-- Python
-- Flask
-
-## Computer Vision
-- OpenCV
-- MediaPipe
-- NumPy
-- YuNet Face Detection
-- SFace Face Recognition
-
-## Database
-- MySQL
-
-## Development Tools
-- Visual Studio Code
-- Antigravity
-- Git
-- GitHub
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```bash
+git clone https://github.com/goddavaladhanalakshmi-wq/smart-class-monitoring.git
