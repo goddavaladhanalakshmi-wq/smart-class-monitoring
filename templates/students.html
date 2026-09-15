@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Student Management{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <div class="page-header-text">
+            <h2><i class="fa-solid fa-users-gear text-primary"></i> Enrolled Students Directory</h2>
+            <p>Manage registered classroom students, facial biometric embeddings, and student profiles.</p>
+        </div>
+        <div class="page-header-actions">
+            <button class="btn btn-primary" onclick="openRegisterModal()">
+                <i class="fa-solid fa-camera-rotate"></i>
+                <span>Register New Student</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Student Cards / Table Grid -->
+    <div class="students-grid">
+        {% if students %}
+            {% for s in students %}
+                <div class="student-card" id="student-card-{{ s.id }}">
+                    <div class="student-card-header">
+                        <div class="student-card-avatar">
+                            {% if s.photo_path %}
+                                <img src="{{ url_for('serve_photo', filename=s.photo_path) }}" alt="{{ s.name }}">
+                            {% else %}
+                                <i class="fa-solid fa-user-graduate"></i>
+                            {% endif %}
+                        </div>
+                        <div class="student-card-main">
+                            <h3 class="student-name">{{ s.name }}</h3>
+                            <span class="student-roll"><i class="fa-solid fa-id-badge"></i> {{ s.student_id }}</span>
+                        </div>
+                        <button class="btn-icon-danger" onclick="deleteStudent({{ s.id }}, '{{ s.name }}')" title="Deactivate Student">
+                            <i class="fa-regular fa-trash-can"></i>
+                        </button>
+                    </div>
+                    <div class="student-card-body">
+                        <div class="student-meta-item">
+                            <span class="meta-label">Department:</span>
+                            <span class="meta-val">{{ s.department or 'Computer Science' }}</span>
+                        </div>
+                        <div class="student-meta-item">
+                            <span class="meta-label">Email:</span>
+                            <span class="meta-val">{{ s.email or '--' }}</span>
+                        </div>
+                        <div class="student-meta-item">
+                            <span class="meta-label">Biometric File:</span>
+                            <span class="meta-val code-tag"><i class="fa-regular fa-file-code"></i> {{ s.embedding_file }}</span>
+                        </div>
+                        <div class="student-meta-item">
+                            <span class="meta-label">Enrolled On:</span>
+                            <span class="meta-val text-muted">{{ s.created_at or '--' }}</span>
+                        </div>
+                    </div>
+                    <div class="student-card-footer">
+                        <span class="status-pill status-active-mini">
+                            <span class="status-dot"></span> Active in AI System
+                        </span>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state card-wide">
+                <i class="fa-solid fa-user-xmark"></i>
+                <p>No students enrolled yet.</p>
+                <span class="empty-sub">Click "Register New Student" above to enroll students using the camera.</span>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Register Student Modal -->
+<div id="register-modal" class="modal-backdrop hidden">
+    <div class="modal-box modal-lg">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-camera"></i> Register Student & Capture Face Biometrics</h3>
+            <button class="modal-close" onclick="closeRegisterModal()">&times;</button>
+        </div>
+        <form id="register-student-form" onsubmit="handleRegisterStudent(event)">
+            <div class="modal-body">
+                <div class="register-instructions-banner">
+                    <i class="fa-solid fa-lightbulb"></i>
+                    <div>
+                        <strong>Instructions:</strong> Have the student look directly at the classroom webcam with good lighting. The system will extract the 128-dimensional SFace biometric embedding in real time.
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-6">
+                        <label for="reg-name"><i class="fa-solid fa-user"></i> Full Name *</label>
+                        <input type="text" id="reg-name" name="name" placeholder="e.g. John Doe" required class="form-input">
+                    </div>
+                    <div class="form-group col-6">
+                        <label for="reg-id"><i class="fa-solid fa-hashtag"></i> Student ID / Roll Number *</label>
+                        <input type="text" id="reg-id" name="student_id" placeholder="e.g. STU-2026-001" required class="form-input">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-6">
+                        <label for="reg-dept"><i class="fa-solid fa-building-columns"></i> Department</label>
+                        <input type="text" id="reg-dept" name="department" value="Computer Science" class="form-input">
+                    </div>
+                    <div class="form-group col-6">
+                        <label for="reg-email"><i class="fa-solid fa-envelope"></i> Email Address</label>
+                        <input type="email" id="reg-email" name="email" placeholder="student@smartclass.edu" class="form-input">
+                    </div>
+                </div>
+
+                <div id="reg-feedback" class="alert hidden mt-3"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeRegisterModal()">Cancel</button>
+                <button type="submit" id="btn-capture-submit" class="btn btn-primary">
+                    <i class="fa-solid fa-camera"></i>
+                    <span>Capture Face & Enroll</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openRegisterModal() {
+        document.getElementById("register-modal").classList.remove("hidden");
+        document.getElementById("reg-feedback").classList.add("hidden");
+    }
+    function closeRegisterModal() {
+        document.getElementById("register-modal").classList.add("hidden");
+    }
+
+    async function handleRegisterStudent(e) {
+        e.preventDefault();
+        const btn = document.getElementById("btn-capture-submit");
+        const feedback = document.getElementById("reg-feedback");
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Capturing & Processing Face...';
+        feedback.className = "alert alert-info";
+        feedback.textContent = "Processing face embedding with YuNet and SFace...";
+        feedback.classList.remove("hidden");
+
+        const payload = {
+            name: document.getElementById("reg-name").value.trim(),
+            student_id: document.getElementById("reg-id").value.trim(),
+            department: document.getElementById("reg-dept").value.trim(),
+            email: document.getElementById("reg-email").value.trim()
+        };
+
+        try {
+            const resp = await fetch("/api/students/register", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(payload)
+            });
+            const res = await resp.json();
+            if (res.success) {
+                feedback.className = "alert alert-success";
+                feedback.innerHTML = '<i class="fa-solid fa-circle-check"></i> ' + res.message;
+                setTimeout(() => {
+                    location.reload();
+                }, 1200);
+            } else {
+                feedback.className = "alert alert-danger";
+                feedback.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> ' + res.message;
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-camera"></i> Retry Face Capture';
+            }
+        } catch (err) {
+            feedback.className = "alert alert-danger";
+            feedback.textContent = "Request error: " + err;
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-camera"></i> Retry Face Capture';
+        }
+    }
+
+    async function deleteStudent(id, name) {
+        if (!confirm(`Are you sure you want to deactivate ${name}?`)) return;
+        try {
+            const resp = await fetch(`/api/students/${id}`, {method: "DELETE"});
+            const res = await resp.json();
+            if (res.success) {
+                const el = document.getElementById(`student-card-${id}`);
+                if (el) el.remove();
+            } else {
+                alert(res.message);
+            }
+        } catch (e) {
+            alert("Delete failed: " + e);
+        }
+    }
+</script>
+{% endblock %}

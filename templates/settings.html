@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}System & MySQL Settings{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <div class="page-header-text">
+            <h2><i class="fa-solid fa-gears text-primary"></i> System & Database Configuration</h2>
+            <p>Configure MySQL database connectivity, vision recognition thresholds, and administrator credentials.</p>
+        </div>
+    </div>
+
+    {% if msg %}
+        <div class="alert alert-{{ msg_type }} mb-4">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>{{ msg }}</span>
+        </div>
+    {% endif %}
+
+    <div class="settings-grid">
+        <!-- MySQL Database Settings Card -->
+        <div class="settings-card">
+            <div class="settings-card-header">
+                <div class="header-icon icon-mysql">
+                    <i class="fa-solid fa-database"></i>
+                </div>
+                <div>
+                    <h3>MySQL Database Connection</h3>
+                    <p>Enter your MySQL database credentials below.</p>
+                </div>
+            </div>
+
+            <!-- Current DB Status Banner -->
+            <div class="status-banner {% if db_stats.active_db == 'mysql' %}banner-success{% else %}banner-warning{% endif %}">
+                <i class="fa-solid {% if db_stats.active_db == 'mysql' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i>
+                <div>
+                    <strong>Active Backend: {{ db_stats.active_db.upper() }}</strong>
+                    {% if db_stats.active_db == 'mysql' %}
+                        <p>Application is securely connected to MySQL database: <code>{{ config.MYSQL.database }}</code></p>
+                    {% else %}
+                        <p>Currently running on <strong>Local Storage Fallback (SQLite)</strong>. You can connect your MySQL server at any time.</p>
+                        {% if db_stats.mysql_error %}
+                            <small class="text-danger">Last attempt error: {{ db_stats.mysql_error }}</small>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('settings') }}" class="settings-form">
+                <input type="hidden" name="action" value="update_mysql">
+                
+                <div class="form-row">
+                    <div class="form-group col-8">
+                        <label for="mysql-host"><i class="fa-solid fa-server"></i> Host / Server</label>
+                        <input type="text" id="mysql-host" name="host" value="{{ config.MYSQL.host }}" required class="form-input">
+                    </div>
+                    <div class="form-group col-4">
+                        <label for="mysql-port"><i class="fa-solid fa-network-wired"></i> Port</label>
+                        <input type="number" id="mysql-port" name="port" value="{{ config.MYSQL.port }}" required class="form-input">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-6">
+                        <label for="mysql-user"><i class="fa-solid fa-user"></i> Username</label>
+                        <input type="text" id="mysql-user" name="user" value="{{ config.MYSQL.user }}" required class="form-input">
+                    </div>
+                    <div class="form-group col-6">
+                        <label for="mysql-pass"><i class="fa-solid fa-key"></i> Password</label>
+                        <input type="password" id="mysql-pass" name="password" value="{{ config.MYSQL.password }}" placeholder="Database password" class="form-input">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="mysql-db"><i class="fa-solid fa-folder-tree"></i> Database Name</label>
+                    <input type="text" id="mysql-db" name="database" value="{{ config.MYSQL.database }}" required class="form-input">
+                    <small class="form-hint">Database will be created automatically if it doesn't already exist.</small>
+                </div>
+
+                <div id="test-mysql-feedback" class="alert hidden"></div>
+
+                <div class="settings-form-actions">
+                    <button type="button" class="btn btn-outline" onclick="testMySQL()">
+                        <i class="fa-solid fa-vial"></i> Test Connection
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-floppy-disk"></i> Save & Connect to MySQL
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Vision AI & Recognition Thresholds Card -->
+        <div class="settings-card">
+            <div class="settings-card-header">
+                <div class="header-icon icon-ai">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+                <div>
+                    <h3>Vision AI & Model Thresholds</h3>
+                    <p>Tune face detection, recognition confidence, and MediaPipe mesh parameters.</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('settings') }}" class="settings-form">
+                <input type="hidden" name="action" value="update_thresholds">
+
+                <div class="form-group">
+                    <div class="slider-label-row">
+                        <label for="cosine_threshold">SFace Cosine Similarity Threshold</label>
+                        <span id="cosine-val" class="slider-val">{{ config.COSINE_THRESHOLD }}</span>
+                    </div>
+                    <input type="range" id="cosine_threshold" name="cosine_threshold" min="0.20" max="0.60" step="0.01" value="{{ config.COSINE_THRESHOLD }}" class="slider-input" oninput="document.getElementById('cosine-val').textContent = this.value">
+                    <small class="form-hint">Higher values = stricter face matching. Recommended: 0.363</small>
+                </div>
+
+                <div class="form-group">
+                    <div class="slider-label-row">
+                        <label for="detection_confidence">YuNet Detection Confidence</label>
+                        <span id="conf-val" class="slider-val">{{ config.DETECTION_CONFIDENCE }}</span>
+                    </div>
+                    <input type="range" id="detection_confidence" name="detection_confidence" min="0.30" max="0.95" step="0.05" value="{{ config.DETECTION_CONFIDENCE }}" class="slider-input" oninput="document.getElementById('conf-val').textContent = this.value">
+                    <small class="form-hint">Face detection sensitivity threshold. Recommended: 0.60</small>
+                </div>
+
+                <div class="model-meta-box">
+                    <div class="meta-line">
+                        <span class="meta-k">YuNet ONNX:</span>
+                        <span class="meta-v">face_detection_yunet_2026may.onnx</span>
+                    </div>
+                    <div class="meta-line">
+                        <span class="meta-k">SFace ONNX:</span>
+                        <span class="meta-v">face_recognition_sface_2021dec.onnx</span>
+                    </div>
+                    <div class="meta-line">
+                        <span class="meta-k">MediaPipe Task:</span>
+                        <span class="meta-v">face_landmarker.task</span>
+                    </div>
+                </div>
+
+                <div class="settings-form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-check"></i> Apply Thresholds
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Administrator Profile & Security Card -->
+        <div class="settings-card card-span-2">
+            <div class="settings-card-header">
+                <div class="header-icon icon-security">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                    <h3>Administrator Profile & Security</h3>
+                    <p>Update admin credentials and password.</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('settings') }}" class="settings-form">
+                <input type="hidden" name="action" value="update_admin">
+
+                <div class="form-row">
+                    <div class="form-group col-6">
+                        <label for="admin-fullname"><i class="fa-solid fa-user-tag"></i> Admin Full Name</label>
+                        <input type="text" id="admin-fullname" name="full_name" value="{{ session.get('admin_name', 'Administrator') }}" class="form-input" required>
+                    </div>
+                    <div class="form-group col-6">
+                        <label for="admin-email"><i class="fa-solid fa-envelope"></i> Email Address</label>
+                        <input type="email" id="admin-email" name="email" value="admin@smartclass.edu" class="form-input">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="admin-new-pw"><i class="fa-solid fa-lock"></i> Change Password (Leave blank to keep current)</label>
+                    <input type="password" id="admin-new-pw" name="new_password" placeholder="Enter new password" class="form-input">
+                </div>
+
+                <div class="settings-form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-user-shield"></i> Update Admin Credentials
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function testMySQL() {
+        const feedback = document.getElementById("test-mysql-feedback");
+        feedback.className = "alert alert-info";
+        feedback.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing MySQL connection...';
+        feedback.classList.remove("hidden");
+
+        const payload = {
+            host: document.getElementById("mysql-host").value.trim(),
+            port: document.getElementById("mysql-port").value.trim(),
+            user: document.getElementById("mysql-user").value.trim(),
+            password: document.getElementById("mysql-pass").value.trim(),
+            database: document.getElementById("mysql-db").value.trim()
+        };
+
+        try {
+            const resp = await fetch("/api/settings/mysql_test", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(payload)
+            });
+            const res = await resp.json();
+            if (res.success) {
+                feedback.className = "alert alert-success";
+                feedback.innerHTML = '<i class="fa-solid fa-circle-check"></i> ' + res.message;
+            } else {
+                feedback.className = "alert alert-danger";
+                feedback.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ' + res.message;
+            }
+        } catch (e) {
+            feedback.className = "alert alert-danger";
+            feedback.textContent = "Error testing connection: " + e;
+        }
+    }
+</script>
+{% endblock %}

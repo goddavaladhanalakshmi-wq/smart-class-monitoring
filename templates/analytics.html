@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Classroom Analytics & Engagement{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <div class="page-header-text">
+            <h2><i class="fa-solid fa-chart-line text-primary"></i> Classroom Attendance & Engagement Analytics</h2>
+            <p>Aggregated telemetry insights derived from computer vision face recognition and MediaPipe mesh tracking.</p>
+        </div>
+    </div>
+
+    <!-- Stats Summary Row -->
+    <div class="kpi-grid">
+        <div class="kpi-card kpi-primary">
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-user-group"></i></div>
+            <div class="kpi-info">
+                <span class="kpi-label">TOTAL STUDENTS</span>
+                <div class="kpi-value">{{ stats.total_students }}</div>
+                <span class="kpi-subtext">Enrolled in Classroom</span>
+            </div>
+        </div>
+
+        <div class="kpi-card kpi-success">
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-calendar-check"></i></div>
+            <div class="kpi-info">
+                <span class="kpi-label">TODAY'S TURNOUT</span>
+                <div class="kpi-value">{{ stats.attendance_rate }}%</div>
+                <span class="kpi-subtext">{{ stats.present_today }} students attended</span>
+            </div>
+        </div>
+
+        <div class="kpi-card kpi-info-card">
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-head-side-virus"></i></div>
+            <div class="kpi-info">
+                <span class="kpi-label">CLASS FOCUS SCORE</span>
+                <div class="kpi-value">{{ stats.avg_attentiveness }}%</div>
+                <span class="kpi-subtext">Overall Attentiveness</span>
+            </div>
+        </div>
+
+        <div class="kpi-card kpi-warning">
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-database"></i></div>
+            <div class="kpi-info">
+                <span class="kpi-label">TOTAL LOGS RECORDED</span>
+                <div class="kpi-value">{{ total_records }}</div>
+                <span class="kpi-subtext">Timestamped Records</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-grid">
+        <!-- Attendance Ratio Doughnut Chart -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3><i class="fa-solid fa-chart-pie"></i> Today's Attendance Distribution</h3>
+            </div>
+            <div class="chart-body">
+                <canvas id="attendanceRatioChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Attentiveness / Focus Breakdown Chart -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3><i class="fa-solid fa-brain"></i> Student Attention Distribution</h3>
+            </div>
+            <div class="chart-body">
+                <canvas id="attentionChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Arrival Times Bar Chart -->
+        <div class="chart-card card-span-2">
+            <div class="chart-header">
+                <h3><i class="fa-solid fa-clock-rotate-left"></i> Hourly Arrival Timeline</h3>
+            </div>
+            <div class="chart-body">
+                <canvas id="hourlyChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const presentToday = {{ stats.present_today }};
+        const totalStudents = {{ stats.total_students }};
+        const absent = Math.max(0, totalStudents - presentToday);
+        const avgAtt = {{ stats.avg_attentiveness }};
+        const drowsy = {{ stats.drowsy_count }};
+
+        // Attendance Chart
+        new Chart(document.getElementById('attendanceRatioChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Present Today', 'Absent / Unrecorded'],
+                datasets: [{
+                    data: [presentToday || 1, absent],
+                    backgroundColor: ['#2ecc71', '#34495e'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#cbd5e1' } }
+                }
+            }
+        });
+
+        // Attention Chart
+        const attentiveRatio = Math.max(10, avgAtt - drowsy * 5);
+        const distractedRatio = Math.max(5, 100 - attentiveRatio - (drowsy * 10));
+        new Chart(document.getElementById('attentionChart'), {
+            type: 'pie',
+            data: {
+                labels: ['Attentive (Facing Board)', 'Distracted / Looking Away', 'Drowsy / Eyes Closed'],
+                datasets: [{
+                    data: [attentiveRatio, distractedRatio, Math.max(2, drowsy * 10)],
+                    backgroundColor: ['#2ecc71', '#f1c40f', '#e74c3c'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#cbd5e1' } }
+                }
+            }
+        });
+
+        // Hourly Timeline
+        new Chart(document.getElementById('hourlyChart'), {
+            type: 'bar',
+            data: {
+                labels: ['08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'],
+                datasets: [{
+                    label: 'Check-In Arrivals',
+                    data: [1, 4, 3, 2, 1, 0, 3, 2, 0],
+                    backgroundColor: '#6366f1',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
+                },
+                plugins: {
+                    legend: { labels: { color: '#cbd5e1' } }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

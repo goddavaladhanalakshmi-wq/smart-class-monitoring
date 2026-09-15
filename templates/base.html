@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Smart Class Monitoring{% endblock %} - Admin Portal</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="dashboard-body">
+
+    <!-- Top Navigation Bar -->
+    <header class="topbar">
+        <div class="topbar-left">
+            <button id="sidebar-toggle" class="btn-icon" title="Toggle Sidebar">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-title">SmartClass</span>
+                    <span class="brand-sub">AI Monitoring HUD</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="topbar-center">
+            <!-- Digital Timestamp Clock -->
+            <div class="server-clock-box">
+                <i class="fa-regular fa-clock clock-icon"></i>
+                <div class="clock-content">
+                    <span class="clock-label">SYSTEM TIMESTAMP</span>
+                    <span id="live-server-clock" class="clock-time">--:--:-- --</span>
+                </div>
+                <span id="live-server-date" class="clock-date">----/--/--</span>
+            </div>
+        </div>
+
+        <div class="topbar-right">
+            <!-- Camera Status Indicator -->
+            <div id="camera-status-pill" class="status-pill status-active">
+                <span class="status-dot pulse"></span>
+                <span class="status-text">CAMERA LIVE</span>
+            </div>
+
+            <!-- Admin Profile Chip -->
+            <div class="admin-chip">
+                <div class="admin-avatar">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+                <div class="admin-details">
+                    <span class="admin-name">{{ session.get('admin_name', 'Administrator') }}</span>
+                    <span class="admin-role">Admin</span>
+                </div>
+            </div>
+
+            <!-- Logout Link -->
+            <a href="{{ url_for('logout') }}" class="btn-logout" title="Sign Out">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <!-- Navigation Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <nav class="sidebar-nav">
+                <div class="nav-section-title">MONITORING</div>
+                <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <i class="fa-solid fa-desktop"></i>
+                    <span>Live Classroom</span>
+                    <span class="badge-live">LIVE</span>
+                </a>
+
+                <div class="nav-section-title">RECORDS & DATA</div>
+                <a href="{{ url_for('attendance') }}" class="nav-item {% if request.endpoint == 'attendance' %}active{% endif %}">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                    <span>Attendance Logs</span>
+                </a>
+                <a href="{{ url_for('students') }}" class="nav-item {% if request.endpoint == 'students' %}active{% endif %}">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Student Roster</span>
+                </a>
+                <a href="{{ url_for('analytics') }}" class="nav-item {% if request.endpoint == 'analytics' %}active{% endif %}">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Class Analytics</span>
+                </a>
+
+                <div class="nav-section-title">SYSTEM</div>
+                <a href="{{ url_for('settings') }}" class="nav-item {% if request.endpoint == 'settings' %}active{% endif %}">
+                    <i class="fa-solid fa-database"></i>
+                    <span>MySQL & Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="system-info-card">
+                    <div class="info-row">
+                        <span class="info-label">Vision Backend:</span>
+                        <span class="info-val">YuNet + SFace</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Engagement:</span>
+                        <span class="info-val">MediaPipe Mesh</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Database:</span>
+                        <span class="info-val db-badge">MySQL / Local</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Flash Message Alerts -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="alerts-container">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <span>{{ message }}</span>
+                                <button class="alert-close" onclick="this.parentElement.remove();">&times;</button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

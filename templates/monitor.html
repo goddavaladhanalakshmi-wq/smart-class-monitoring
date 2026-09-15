@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Live Monitor{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Top KPI Stats Row -->
+    <div class="kpi-grid">
+        <div class="kpi-card kpi-primary">
+            <div class="kpi-icon-wrap">
+                <i class="fa-solid fa-users-viewfinder"></i>
+            </div>
+            <div class="kpi-info">
+                <span class="kpi-label">IN-FRAME STUDENTS</span>
+                <div class="kpi-value" id="kpi-in-frame">0</div>
+                <span class="kpi-subtext"><i class="fa-solid fa-camera"></i> Live Real-Time Detection</span>
+            </div>
+        </div>
+
+        <div class="kpi-card kpi-success">
+            <div class="kpi-icon-wrap">
+                <i class="fa-solid fa-user-check"></i>
+            </div>
+            <div class="kpi-info">
+                <span class="kpi-label">ATTENDANCE TODAY</span>
+                <div class="kpi-value" id="kpi-present-today">{{ stats.present_today }} / {{ stats.total_students }}</div>
+                <span class="kpi-subtext" id="kpi-rate-sub"><i class="fa-solid fa-chart-pie"></i> {{ stats.attendance_rate }}% Enrolled Present</span>
+            </div>
+        </div>
+
+        <div class="kpi-card kpi-info-card">
+            <div class="kpi-icon-wrap">
+                <i class="fa-solid fa-brain"></i>
+            </div>
+            <div class="kpi-info">
+                <span class="kpi-label">CLASS ENGAGEMENT</span>
+                <div class="kpi-value" id="kpi-avg-attentiveness">{{ stats.avg_attentiveness }}%</div>
+                <span class="kpi-subtext"><i class="fa-solid fa-eye"></i> MediaPipe Attention Score</span>
+            </div>
+        </div>
+
+        <div class="kpi-card kpi-warning">
+            <div class="kpi-icon-wrap">
+                <i class="fa-solid fa-bed"></i>
+            </div>
+            <div class="kpi-info">
+                <span class="kpi-label">DROWSY / DISTRACTED</span>
+                <div class="kpi-value" id="kpi-drowsy-count">{{ stats.drowsy_count }}</div>
+                <span class="kpi-subtext"><i class="fa-solid fa-bell"></i> Blinks & Head-Tilt Flags</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Live Monitoring Layout -->
+    <div class="monitor-grid">
+        <!-- Live Video Feed Container -->
+        <div class="stream-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fa-solid fa-video text-danger pulse"></i>
+                    <span>Live Classroom Camera Stream</span>
+                </div>
+                <div class="stream-controls">
+                    <button id="btn-toggle-cam" class="btn btn-sm btn-outline" title="Pause/Resume Stream">
+                        <i class="fa-solid fa-pause" id="cam-toggle-icon"></i>
+                        <span id="cam-toggle-text">Pause Stream</span>
+                    </button>
+                    <button id="btn-fullscreen" class="btn btn-sm btn-outline" title="Fullscreen Stream">
+                        <i class="fa-solid fa-expand"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="video-wrapper" id="video-wrapper">
+                <img id="video-stream" src="{{ url_for('video_feed') }}" alt="Live Classroom Feed" class="stream-img">
+                
+                <!-- On-Screen Telemetry HUD -->
+                <div class="video-overlay-badges">
+                    <div class="overlay-badge hud-fps">
+                        <i class="fa-solid fa-bolt"></i> <span id="hud-fps-val">--</span> FPS
+                    </div>
+                    <div class="overlay-badge hud-timestamp">
+                        <i class="fa-regular fa-clock"></i> <span id="hud-timestamp-val">Synchronizing...</span>
+                    </div>
+                </div>
+
+                <!-- Stream Offline Placeholder -->
+                <div id="stream-paused-overlay" class="stream-offline hidden">
+                    <i class="fa-solid fa-video-slash"></i>
+                    <h3>Camera Stream Paused</h3>
+                    <p>Click "Resume Stream" to reactivate the live classroom camera.</p>
+                </div>
+            </div>
+
+            <div class="stream-legend">
+                <div class="legend-item"><span class="legend-dot dot-green"></span> <span>Present & Attentive</span></div>
+                <div class="legend-item"><span class="legend-dot dot-yellow"></span> <span>Looking Away / Distracted</span></div>
+                <div class="legend-item"><span class="legend-dot dot-red"></span> <span>Drowsy / Sleeping Warning</span></div>
+                <div class="legend-item"><span class="legend-dot dot-blue"></span> <span>Unknown Face</span></div>
+            </div>
+        </div>
+
+        <!-- Real-Time Telemetry & Active Students Roster -->
+        <div class="telemetry-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fa-solid fa-id-card-clip text-primary"></i>
+                    <span>In-Camera Roster</span>
+                </div>
+                <span class="badge-count" id="active-students-badge">0 Active</span>
+            </div>
+
+            <!-- Dynamic Active Students List -->
+            <div class="active-students-list" id="active-students-list">
+                <div class="empty-state">
+                    <i class="fa-solid fa-user-astronaut"></i>
+                    <p>No students detected in camera frame.</p>
+                    <span class="empty-sub">Registered students will be identified and logged automatically with timestamps upon detection.</span>
+                </div>
+            </div>
+
+            <!-- Real-Time Event Log -->
+            <div class="events-log-section">
+                <div class="section-title">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>Real-Time Activity Ticker</span>
+                </div>
+                <div class="activity-ticker" id="activity-ticker">
+                    <div class="ticker-item">
+                        <span class="ticker-time">--:--:--</span>
+                        <span class="ticker-msg">System initialized. Monitoring camera activated.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/monitor.js') }}"></script>
+{% endblock %}
