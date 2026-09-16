@@ -78,19 +78,26 @@ detector = cv2.FaceDetectorYN.create(
 camera = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
 if not camera.isOpened():
-    print("ERROR: Could not open camera using DirectShow (Index 0).")
-    print("Please verify your webcam is connected and not in use by another application.")
+    print("ERROR: Could not open camera using DirectShow (Index 0).", flush=True)
+    print("Please verify your webcam is connected and not in use by another application.", flush=True)
     exit()
+
+# Wait briefly after opening for DirectShow device initialization
+time.sleep(0.5)
 
 # Configure camera resolution
 camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
-print("=" * 60)
-print("SMART CLASS MONITORING")
-print("=" * 60)
-print("Camera started successfully (DirectShow 640x480).")
-print("Press 'Q' or 'ESC' to quit, or click [X] on the window.")
+# Create preview window before loop
+cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
+cv2.resizeWindow(WINDOW_NAME, 640, 480)
+
+print("=" * 60, flush=True)
+print("SMART CLASS MONITORING", flush=True)
+print("=" * 60, flush=True)
+print("Camera started successfully (DirectShow 640x480).", flush=True)
+print("Press 'Q' or 'ESC' to quit, or click [X] on the window.", flush=True)
 
 
 # ==========================================
@@ -100,6 +107,7 @@ print("Press 'Q' or 'ESC' to quit, or click [X] on the window.")
 last_log_time = None
 consecutive_fails = 0
 max_consecutive_fails = 20
+frame_count = 0
 
 
 # ==========================================
@@ -115,7 +123,7 @@ try:
         if not success or frame is None:
             consecutive_fails += 1
             if consecutive_fails == 1 or consecutive_fails % 10 == 0:
-                print(f"WARNING: Could not read frame ({consecutive_fails}/{max_consecutive_fails}). Retrying...")
+                print(f"WARNING: Could not read frame ({consecutive_fails}/{max_consecutive_fails}). Retrying...", flush=True)
             time.sleep(0.02)
 
             key = cv2.waitKey(1) & 0xFF
@@ -123,12 +131,20 @@ try:
                 break
 
             if consecutive_fails >= max_consecutive_fails:
-                print("ERROR: Camera stream lost. Exiting...")
+                print("ERROR: Camera stream lost. Exiting...", flush=True)
                 break
 
             continue
 
         consecutive_fails = 0
+        frame_count += 1
+
+        # Display camera frame immediately so preview appears before/while processing runs
+        cv2.imshow(WINDOW_NAME, frame)
+        raw_key = cv2.waitKey(1) & 0xFF
+        if raw_key in [ord("q"), ord("Q"), 27]:
+            print("Exit requested by keypress.", flush=True)
+            break
 
         # Frame dimensions
         height, width = frame.shape[:2]
@@ -232,19 +248,20 @@ try:
 
         key = cv2.waitKey(1) & 0xFF
         if key in [ord("q"), ord("Q"), 27]:
-            print("Exit requested by keypress.")
+            print("Exit requested by keypress.", flush=True)
             break
 
         # Check if window was closed via [X] button
-        try:
-            if cv2.getWindowProperty(WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:
-                print("Preview window closed by user.")
+        if frame_count > 5:
+            try:
+                if cv2.getWindowProperty(WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:
+                    print("Preview window closed by user.", flush=True)
+                    break
+            except Exception:
                 break
-        except Exception:
-            break
 
 except KeyboardInterrupt:
-    print("\nStopped by user.")
+    print("\nStopped by user.", flush=True)
 
 finally:
     # ======================================
@@ -252,4 +269,4 @@ finally:
     # ======================================
     camera.release()
     cv2.destroyAllWindows()
-    print("Smart Class Monitoring stopped.")
+    print("Smart Class Monitoring stopped.", flush=True)
