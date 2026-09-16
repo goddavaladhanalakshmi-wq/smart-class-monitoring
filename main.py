@@ -69,6 +69,7 @@ detector = cv2.FaceDetectorYN.create(
     0.3,
     5000
 )
+detector.setInputSize((640, 480))
 
 
 # ==========================================
@@ -138,17 +139,6 @@ try:
 
         consecutive_fails = 0
         frame_count += 1
-
-        # Display camera frame immediately so preview appears before/while processing runs
-        cv2.imshow(WINDOW_NAME, frame)
-        raw_key = cv2.waitKey(1) & 0xFF
-        if raw_key in [ord("q"), ord("Q"), 27]:
-            print("Exit requested by keypress.", flush=True)
-            break
-
-        # Frame dimensions
-        height, width = frame.shape[:2]
-        detector.setInputSize((width, height))
 
         # Detect faces
         result, faces = detector.detect(frame)
@@ -250,15 +240,6 @@ try:
         if key in [ord("q"), ord("Q"), 27]:
             print("Exit requested by keypress.", flush=True)
             break
-
-        # Check if window was closed via [X] button
-        if frame_count > 5:
-            try:
-                if cv2.getWindowProperty(WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:
-                    print("Preview window closed by user.", flush=True)
-                    break
-            except Exception:
-                break
 
 except KeyboardInterrupt:
     print("\nStopped by user.", flush=True)
