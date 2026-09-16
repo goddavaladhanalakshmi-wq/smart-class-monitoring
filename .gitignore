@@ -1,19 +1,52 @@
+# Virtual Environment
 venv/
+env/
+ENV/
+.venv/
+
+# Python Cache & Bytecode
 __pycache__/
+*.py[cod]
+*$py.class
 *.pyc
+*.pyo
+*.pyd
+
+# Sensitive Configuration & Credentials
 .env
 .env.*
-node_modules/
-build/
-dist/
-.vscode/
-.idea/
+config.json
+
+# Logs & Test/Runtime Data
+logs/
 *.log
 attendance.csv
+
+# Local Database & SQLite files
+*.db
+*.sqlite
+*.sqlite3
+data/smart_classroom.db
+
+# Biometric Face Files (Personal embeddings & photos)
+data/students/*.npy
+data/photos/*.jpg
+data/photos/*.jpeg
+data/photos/*.png
+
+# Backups & Scratch
 backups/
-data/*.db
-data/photos/
-data/students/
-logs/
-config.json
-models/face_recognition_sface_2021dec.onnx
+scratch/
+
+# Operating System & IDE
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Temporary / Swap files
+*.tmp
+*.temp
+*.swp
+*~

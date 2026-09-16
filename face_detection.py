@@ -3,13 +3,15 @@ import os
 import time
 
 # ============================================================
-# SMART CLASS MONITORING - FACE DETECTION TEST
+# SMART CLASS MONITORING - FACE DETECTION
 # ============================================================
 
 MODEL_PATH = os.path.join(
     "models",
     "face_detection_yunet_2026may.onnx"
 )
+
+WINDOW_NAME = "Smart Class Monitoring - Face Detection"
 
 CAMERA_INDEX = 0
 CAMERA_WIDTH = 640
@@ -18,8 +20,6 @@ CAMERA_HEIGHT = 480
 SCORE_THRESHOLD = 0.9
 NMS_THRESHOLD = 0.3
 TOP_K = 5000
-
-WINDOW_NAME = "Smart Class Monitoring - Face Detection"
 
 # ============================================================
 # CHECK MODEL
@@ -69,20 +69,15 @@ if not camera.isOpened():
 camera.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH)
 camera.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
 
-print("Camera opened successfully.")
-print("Initializing camera window...")
+print("Camera opened successfully (DirectShow 640x480).")
 
-# ============================================================
-# INITIALIZE WINDOW BEFORE IMSHOW
-# ============================================================
-
+# Create window initially
 cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
-cv2.resizeWindow(WINDOW_NAME, CAMERA_WIDTH, CAMERA_HEIGHT)
+cv2.resizeWindow(WINDOW_NAME, 640, 480)
 
-print("Camera ready!")
 print()
-print("Face detection started!")
-print("Press Q or ESC to quit, or close the preview window.")
+print("Face detection running!")
+print("Press 'Q' or 'ESC' on the preview window to exit.")
 print()
 
 # ============================================================
@@ -95,51 +90,47 @@ try:
     while True:
         success, frame = camera.read()
 
-        # --------------------------------------------------------
-        # CAMERA FRAME CHECK
-        # --------------------------------------------------------
-
+        # Exit if camera read failure occurs continuously
         if not success or frame is None:
             frame_failures += 1
-
-            if frame_failures == 1 or frame_failures % 10 == 0:
-                print(f"WARNING: Could not read camera frame ({frame_failures}/20)")
-
             if frame_failures >= 20:
-                print("ERROR: Camera frame could not be read.")
+                print("ERROR: Camera stream disconnected. Exiting...")
                 break
-
             time.sleep(0.02)
-            key = cv2.waitKey(1) & 0xFF
-            if key in [ord("q"), ord("Q"), 27]:
-                break
             continue
 
         frame_failures = 0
 
         # --------------------------------------------------------
-        # GET FRAME SIZE & SET DETECTOR INPUT SIZE
+        # DISPLAY RAW CAMERA FRAME FIRST
+        # --------------------------------------------------------
+        cv2.namedWindow("Smart Class Monitoring - Face Detection", cv2.WINDOW_NORMAL)
+        cv2.resizeWindow("Smart Class Monitoring - Face Detection", 640, 480)
+        cv2.imshow("Smart Class Monitoring - Face Detection", frame)
+        raw_key = cv2.waitKey(1)
+        if raw_key != -1:
+            key_code = raw_key & 0xFF
+            if key_code in (ord("q"), ord("Q"), 27):
+                print("Exit requested by user.")
+                break
+
+        # --------------------------------------------------------
+        # YUNET FACE DETECTION (RUNS AFTER INITIAL DISPLAY)
         # --------------------------------------------------------
 
+        # Set detector input dimensions
         height, width = frame.shape[:2]
         detector.setInputSize((width, height))
 
-        # --------------------------------------------------------
-        # DETECT FACES
-        # --------------------------------------------------------
-
+        # Detect faces with YuNet
         try:
             _, faces = detector.detect(frame)
         except Exception as e:
-            print("ERROR during face detection:", e)
             faces = None
 
         face_count = 0
 
-        # --------------------------------------------------------
-        # DRAW FACE DETECTIONS
-        # --------------------------------------------------------
-
+        # Draw green bounding boxes and confidence scores
         if faces is not None:
             face_count = len(faces)
 
@@ -151,7 +142,7 @@ try:
                 w = max(1, w)
                 h = max(1, h)
 
-                # Draw green rectangle
+                # Green face rectangle
                 cv2.rectangle(
                     frame,
                     (x, y),
@@ -162,7 +153,6 @@ try:
 
                 # Detection confidence
                 confidence = float(face[-1])
-
                 cv2.putText(
                     frame,
                     f"Face {confidence:.2f}",
@@ -173,10 +163,7 @@ try:
                     2
                 )
 
-        # --------------------------------------------------------
-        # DISPLAY FACE COUNT
-        # --------------------------------------------------------
-
+        # Display face count
         cv2.putText(
             frame,
             f"Faces detected: {face_count}",
@@ -187,10 +174,7 @@ try:
             2
         )
 
-        # --------------------------------------------------------
-        # DISPLAY INSTRUCTIONS
-        # --------------------------------------------------------
-
+        # Display instructions
         cv2.putText(
             frame,
             "Press Q or ESC to quit",
@@ -201,31 +185,19 @@ try:
             2
         )
 
-        # --------------------------------------------------------
-        # SHOW CAMERA (AFTER NAMEDWINDOW)
-        # --------------------------------------------------------
+        # Display annotated frame
+        cv2.imshow("Smart Class Monitoring - Face Detection", frame)
 
-        cv2.imshow(WINDOW_NAME, frame)
-
-        # --------------------------------------------------------
-        # CONTINUOUS WAITKEY (PUMPS WINDOW EVENTS & READS KEYS)
-        # --------------------------------------------------------
-
-        key = cv2.waitKey(1) & 0xFF
-        if key in [ord("q"), ord("Q"), 27]:
-            print("Exit requested by keypress.")
-            break
-
-        # Check if window was closed via [X] button
-        try:
-            if cv2.getWindowProperty(WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:
-                print("Preview window closed by user.")
+        # Continuous waitKey(1) - exit strictly on Q, q, or ESC
+        key = cv2.waitKey(1)
+        if key != -1:
+            key_code = key & 0xFF
+            if key_code in (ord("q"), ord("Q"), 27):
+                print("Exit requested by user.")
                 break
-        except Exception:
-            break
 
 except KeyboardInterrupt:
-    print("\nStopped by user.")
+    print("\nStopped by keyboard interrupt.")
 
 finally:
     # ============================================================
@@ -233,7 +205,6 @@ finally:
     # ============================================================
     camera.release()
     cv2.destroyAllWindows()
-
     print()
     print("Face detection stopped.")
-    print("Camera released successfully.")
+    print("Camera released and preview closed.")
