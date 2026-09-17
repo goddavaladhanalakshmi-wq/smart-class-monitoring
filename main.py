@@ -97,6 +97,9 @@ def main():
     # Create preview window before loop
     cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(WINDOW_NAME, 640, 480)
+    cv2.moveWindow(WINDOW_NAME, 100, 100)
+    cv2.setWindowProperty(WINDOW_NAME, cv2.WND_PROP_TOPMOST, 1)
+    cv2.resizeWindow(WINDOW_NAME, 640, 480)
 
     # ==========================================
     # ATTENDANCE TIMER & STATE
