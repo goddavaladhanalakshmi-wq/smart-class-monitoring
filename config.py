@@ -1,4 +1,4 @@
-import os
+﻿import os
 import json
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -14,11 +14,11 @@ DEFAULT_CONFIG = {
     "ATTENDANCE_COOLDOWN_SECONDS": 300,
     "DB_TYPE": "mysql",
     "MYSQL": {
-        "host": "localhost",
-        "port": 3306,
-        "user": "root",
-        "password": "",
-        "database": "smart_class_db"
+        "host": os.getenv("MYSQL_HOST", "localhost"),
+        "port": int(os.getenv("MYSQL_PORT", "3306")),
+        "user": os.getenv("MYSQL_USER", "root"),
+        "password": os.getenv("MYSQL_PASSWORD", ""),
+        "database": os.getenv("MYSQL_DATABASE", "smart_class_db")
     },
     "SQLITE_PATH": os.path.join(
         BASE_DIR, "data", "smart_classroom.db"
