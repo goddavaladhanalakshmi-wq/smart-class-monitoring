@@ -51,3 +51,9 @@ desktop.ini
 *.swp
 *~
 venv/
+config.json
+config_backup.py
+config_backup_before_render.py
+smart_class_db_backup.sql
+aiven_import.sql
+.env

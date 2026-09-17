@@ -20,29 +20,15 @@ DEFAULT_CONFIG = {
         "password": os.getenv("MYSQL_PASSWORD", ""),
         "database": os.getenv("MYSQL_DATABASE", "smart_class_db")
     },
-    "SQLITE_PATH": os.path.join(
-        BASE_DIR, "data", "smart_classroom.db"
-    ),
+    "SQLITE_PATH": os.path.join(BASE_DIR, "data", "smart_classroom.db"),
     "MODELS": {
-        "yunet": os.path.join(
-            BASE_DIR, "models", "face_detection_yunet_2026may.onnx"
-        ),
-        "sface": os.path.join(
-            BASE_DIR, "models", "face_recognition_sface_2021dec.onnx"
-        ),
-        "face_landmarker": os.path.join(
-            BASE_DIR, "models", "face_landmarker.task"
-        )
+        "yunet": os.path.join(BASE_DIR, "models", "face_detection_yunet_2026may.onnx"),
+        "sface": os.path.join(BASE_DIR, "models", "face_recognition_sface_2021dec.onnx"),
+        "face_landmarker": os.path.join(BASE_DIR, "models", "face_landmarker.task")
     },
-    "STUDENT_DATA_DIR": os.path.join(
-        BASE_DIR, "data", "students"
-    ),
-    "STUDENT_PHOTOS_DIR": os.path.join(
-        BASE_DIR, "data", "photos"
-    ),
-    "LOGS_DIR": os.path.join(
-        BASE_DIR, "logs"
-    )
+    "STUDENT_DATA_DIR": os.path.join(BASE_DIR, "data", "students"),
+    "STUDENT_PHOTOS_DIR": os.path.join(BASE_DIR, "data", "photos"),
+    "LOGS_DIR": os.path.join(BASE_DIR, "logs")
 }
 
 
@@ -69,10 +55,25 @@ def load_config():
                 }
 
         except Exception as e:
-            print(
-                f"Warning: Could not read {CONFIG_FILE}, "
-                f"using defaults. Error: {e}"
-            )
+            print(f"Warning: Could not read {CONFIG_FILE}, using defaults. Error: {e}")
+
+    if os.getenv("SECRET_KEY"):
+        config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+
+    if os.getenv("MYSQL_HOST"):
+        config["MYSQL"]["host"] = os.getenv("MYSQL_HOST")
+
+    if os.getenv("MYSQL_PORT"):
+        config["MYSQL"]["port"] = int(os.getenv("MYSQL_PORT"))
+
+    if os.getenv("MYSQL_USER"):
+        config["MYSQL"]["user"] = os.getenv("MYSQL_USER")
+
+    if os.getenv("MYSQL_PASSWORD"):
+        config["MYSQL"]["password"] = os.getenv("MYSQL_PASSWORD")
+
+    if os.getenv("MYSQL_DATABASE"):
+        config["MYSQL"]["database"] = os.getenv("MYSQL_DATABASE")
 
     return config
 
@@ -81,9 +82,7 @@ def save_config(new_config):
     try:
         with open(CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(new_config, f, indent=4)
-
         return True
-
     except Exception as e:
         print(f"Error saving config: {e}")
         return False
